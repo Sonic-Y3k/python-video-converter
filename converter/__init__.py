@@ -116,10 +116,14 @@ class Converter(object):
 
         if 'map' in opt:
             m = opt['map']
-            if not type(m) == int:
-                raise ConverterError('map needs to be int')
-            else:
+            if type(m) == int:
                 format_options.extend(['-map', str(m)])
+            elif type(m) == list:
+                for mi in m:
+                    if type(mi) == int:
+                        format_options.extend(['-map', '0:'+str(mi)])
+            else:
+                raise ConverterError('map needs to be int or a list of int')
 
         if 'start' in opt:
             start = parse_time(opt['start'])
