@@ -386,7 +386,7 @@ class FFMpeg(object):
 
         return info
 
-    def convert(self, infile, outfile, opts, timeout=10, nice=None, get_output=False, title=None):
+    def convert(self, infile, outfile, opts, timeout=10, nice=None, get_output=False, use_decoder=None, title=None):
         """
         Convert the source media (infile) according to specified options
         (a list of ffmpeg switches as strings) and save it to outfile.
@@ -413,6 +413,10 @@ class FFMpeg(object):
         # infile = self._dvd2concat(infile)
 
         cmds = [self.ffmpeg_path, '-hide_banner']
+
+        if type(use_decoder) == str:
+            cmds.extend(['-c:v',use_decoder])
+
         if infile == self.DVD_CONCAT_FILE:
             cmds.extend(['-f', 'concat', '-safe', '0'])
         # Add duration and position flag before input when we can.

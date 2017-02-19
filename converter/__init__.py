@@ -146,7 +146,7 @@ class Converter(object):
 
         return optlist
 
-    def convert(self, infile, outfile, options, twopass=False, timeout=10, nice=None, title=None):
+    def convert(self, infile, outfile, options, twopass=False, timeout=10, nice=None, use_decoder=None, title=None):
         """
         Convert media file (infile) according to specified options, and
         save it to outfile. For two-pass encoding, specify the pass (1 or 2)
@@ -228,17 +228,17 @@ class Converter(object):
         if twopass:
             optlist1 = self.parse_options(options, 1)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
-                                                timeout=timeout, nice=nice):
+                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
                 yield int((50.0 * timecode) / duration)
 
             optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
-                                                timeout=timeout, nice=nice):
+                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
                 yield int(50.0 + (50.0 * timecode) / duration)
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
-                                                timeout=timeout, nice=nice):
+                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
                 yield int((100.0 * timecode) / duration)
 
     def analyze(self, infile, audio_level=True, interlacing=True, crop=False, start=None, duration=None, end=None, timeout=10, nice=None, title=None):
@@ -275,7 +275,7 @@ class Converter(object):
         if info['format']['duration'] < 0.01:
             raise ConverterError('Zero-length media')
         for timecode in self.ffmpeg.analyze(infile, audio_level, interlacing,
-                                            crop, start, duration, end, timeout, nice):
+                                            crop, start, duration, end, timeout, nice, use_decoder=use_decoder):
             if isinstance(timecode, float):
                 yield int((100.0 * timecode) / info['format']['duration'])
             else:
