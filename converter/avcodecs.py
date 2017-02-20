@@ -700,13 +700,13 @@ class HEVCNvencCodec(VideoCodec):
                 optlist.extend(['-2pass', 'auto'])
         if 'gpu' in safe:
             if type(safe['gpu']) == int:
-                optlist.extend(['-gpu', safe['gpu']])
+                optlist.extend(['-gpu', str(safe['gpu'])])
             else:
                 logger.error(str('gpu')+' is not a valid gpu for hevc_nvenc encoder ...')
                 optlist.extend(['-gpu', 'any'])
         if 'delay' in safe:
             if safe['delay'] >= 0:
-                optlist.extend(['-delay', safe['delay']])
+                optlist.extend(['-delay', str(safe['delay'])])
             else:
                 logger.error(str(safe['delay'])+' is not a valid delay for hevc_nvenc encoder ...')
         if 'no-scenecut' in safe:
