@@ -1078,7 +1078,7 @@ class HEVCCodec(VideoCodec):
         'opt-cu-delta-qp': bool
     })
     
-    def check_condition(self, name, default, value, condition, x265_params):
+    def check_condition(self, name, value, default, condition, x265_params):
         if condition:
             x265_params.append(name+'='+str(value))
         else:
@@ -1165,7 +1165,7 @@ class HEVCCodec(VideoCodec):
         if 'bframe-bias' in safe: self.check_condition('bframe-bias', safe['bframe-bias'], 0, -90 <= safe['bframe-bias'] <= 100, x265_params)
         if 'b-pyramid' in safe: x265_params.append('b-pyramid' if safe['b-pyramid'] else 'no-b-pyramid')
         if 'bitrate' in safe: self.check_condition('bitrate', safe['bitrate'], 0, 0 <= safe['bitrate'], x265_params)
-        if 'crf' in safe: self.check_condition('crf', safe['crf'], 28.0, 0 <= safe['crf'] <= 51.0, x265_params)
+        if 'crf' in safe: self.check_condition('crf', safe['crf'], 28.0, 0.0 <= safe['crf'] <= 51.0, x265_params)
         if 'crf-max' in safe: self.check_condition('crf-max', safe['crf-max'], False, 0 <= safe['crf-max'] <= 51.0, x265_params)
         if 'crf-min' in safe: self.check_condition('crf-min', safe['crf-min'], False, 0 <= safe['crf-min'] <= 51.0, x265_params)
         if 'vbv-bufsize' in safe: self.check_condition('vbv-bufsize', safe['vbv-bufsize'], 0, 0 <= safe['vbv-bufsize'], x265_params)
