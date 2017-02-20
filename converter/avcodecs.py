@@ -943,7 +943,294 @@ class HEVCNvencCodec(VideoCodec):
                 logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
                 optlist.extend(['-qmax', '51'])
         return optlist
+
+class HEVCCodec(VideoCodec):
+    """
+    HEVC/AVC video codec.
+    """
+    codec_name = 'hevc'
+    ffmpeg_codec_name = 'libx265'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'preset': str,
+        'tune': str,
+        'ssim': bool,
+        'psnr': bool,
+        'profile': str,
+        'level-idc': str,
+        'high-tier': bool,
+        'ref': int,
+        'allow-non-conformance': bool,
+        'uhd-bd': bool,
+        'rd': int,
+        'ctu': int,
+        'min-cu-size': int,
+        'limit-refs': int,
+        'limit-modes': bool,
+        'rect': bool,
+        'amp': bool,
+        'early-skip': bool,
+        'rskip': bool,
+        'fast-intra': bool,
+        'b-intra': bool,
+        'cu-lossless': bool,
+        'tskip-fast': bool,
+        'rd-refine': bool,
+        'analysis-mode': int,
+        'analysis-file': str,
+        'rdoq-level': int,
+        'tu-intra-depth': int,
+        'tu-inter-depth': int,
+        'limit-tu': int,
+        'nr-intra': int,
+        'nr-inter': int,
+        'tskip': bool,
+        'rdpenalty': int,
+        'max-tu-size': int,
+        'dynamic-rd': int,
+        'ssim-rd': bool,
+        'max-merge': int,
+        'me': int,
+        'subme': int,
+        'merange': int,
+        'temporal-mvp': bool,
+        'weightp': bool,
+        'weightb': bool,
+        'analyze-src-pics': bool,
+        'strong-intra-smoothing': bool,
+        'constrained-intra': bool,
+        'psy-rd': float,
+        'psy-rdoq': float,
+        'open-gop': bool,
+        'keyint': int,
+        'min-keyint': int,
+        'scenecut': bool,
+        'scenecut-bias': float,
+        'intra-refresh': bool,
+        'rc-lookahead': int,
+        'lookahead-slices': int,
+        'lookahead-threads': int,
+        'b-adapt': int,
+        'bframes': int,
+        'bframe-bias': int,
+        'b-pyramid': bool,
+        'bitrate': int,
+        'crf': float,
+        'crf-max': float,
+        'crf-min': float,
+        'vbv-bufsize': int,
+        'vbv-maxrate': int,
+        'vbv-init': float,
+        'qp': int,
+        'lossless': bool,
+        'aq-mode': int,
+        'aq-strength': float,
+        'aq-motion': bool,
+        'qg-size': int,
+        'cutree': bool,
+        'pass': int,
+        'stats': str,
+        'slow-firstpass': bool,
+        'multi-pass-opt-analysis': bool,
+        'multi-pass-opt-distortion': bool,
+        'strict-cbr': bool,
+        'cbqpoffs': int,
+        'crqpoffs': int,
+        'qcomp': float,
+        'qpstep': int,
+        'qpmin': int,
+        'qpmax': int,
+        'rc-grain': bool,
+        'qblur': float,
+        'cplxblur': float,
+        'signhide': bool,
+        'qpfile': str,
+        'scaling-list': str,
+        'lambda-file': str,
+        'sao': bool,
+        'sao-non-deblock': bool,
+        'sar': int,
+        'display-window': str,
+        'overscan': str,
+        'videoformat': int,
+        'range': str,
+        'colorprim': int,
+        'transfer': int,
+        'colormatrix': int,
+        'chromaloc': int,
+        'hdr': bool,
+        'hdr-opt': bool,
+        'min-luma': int,
+        'max-luma': int,
+        'annexb': bool,
+        'repeat-headers': bool,
+        'aud': bool,
+        'hrd': bool,
+        'info': bool,
+        'hash': int,
+        'temporal-layers': bool,
+        'log2-max-poc-lsb': int,
+        'vui-timing-info': bool,
+        'vui-hrd-info': bool,
+        'opt-qp-pps': bool,
+        'opt-ref-list-length-pps': bool,
+        'multi-pass-opt-rps': bool,
+        'opt-cu-delta-qp': bool
+    })
     
+    def check_condition(self, name, default, value, condition, x265_params):
+        if condition:
+            x265_params.append(name+':'+str(value))
+        else:
+            if type(default) != bool:
+                x265_params.append(name+':'+str(default))
+            logger.error(str(value)+' is not a valid '+name+' for libx265 encoder ...')
+    
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        x265_params = []
+        if 'preset' in safe:
+            if safe['preset'] in ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow', 'placebo']:
+                optlist.extend(['preset', safe['preset']])
+            else:
+                logger.error(safe['preset']+' is not a valid preset for libx265 encoder ...')
+                optlist.extend(['preset', 'medium'])
+        if 'tune' in safe:
+            if safe['tune'] in ['psnr', 'ssim', 'grain', 'fastdecode', 'zerolatency']:
+                optlist.extend(['tune', safe['tune']])
+            else:
+                logger.error(safe['tune']+' is not a valid tune for libx265 encoder ...')
+                optlist.extend(['tune', 'grain'])
+        if 'ssim' in safe: x265_params.append('ssim' if safe['ssim'] else 'no-ssim')
+        if 'psnr' in safe: x265_params.append('psnr' if safe['psnr'] else 'no-psnr')
+        if 'profile' in safe: self.check_condition('profile', safe['profile'], False, safe['profile'] in [ 'main', 'main-intra', 'mainstillpicture', 'main444-8', 'main444-intra', 'main444-stillpicture', 'main10', 'main10-intra', 'main422-10', 'main422-10-intra', 'main444-10', 'main444-10-intra', 'main12', 'main12-intra', 'main422-12', 'main422-12-intra', 'main444-12', 'main444-12-intra'], x265_params)
+        if 'level-idc' in safe: self.check_condition('level-idc', safe['level-idc'], 0, safe['level-idc'] in ['1', '2', '2.1', '3', '3.1', '4', '4.1', '5', '5.1', '5.2', '6', '6.1', '6.2', '8.5'], x265_params)
+        if 'high-tier' in safe: x265_params.append('high-tier' if safe['high-tier'] else 'no-high-tier')
+        if 'ref' in safe: self.check_condition('ref', safe['ref'], 3, 1 <= safe['ref'] <= 16, x265_params)
+        if 'allow-non-conformance' in safe: x265_params.append('allow-non-conformance' if safe['allow-non-conformance'] else 'no-allow-non-conformance')
+        if 'uhd-bd' in safe: x265_params.append('uhd-bd' if safe['uhd-bd'] else 'no-uhd-bd')
+        if 'rd' in safe: self.check_condition('rd', safe['rd'], 3, 1 <= safe['rd'] <= 6, x265_params)
+        if 'ctu' in safe: self.check_condition('ctu', safe['ctu'], 64, safe['ctu'] in [64, 32, 16], x265_params)
+        if 'min-cu-size' in safe: self.check_condition('min-cu-size', safe['min-cu-size'], 8, safe['min-cu-size'] in [8, 16, 32], x265_params)
+        if 'limit-refs' in safe: self.check_condition('limit-refs', safe['limit-refs'], 3, 0 <= safe['limit-refs'] <= 3, x265_params)
+        if 'limit-modes' in safe: x265_params.append('limit-modes' if safe['limit-modes'] else 'no-limit-modes')
+        if 'rect' in safe: x265_params.append('rect' if safe['rect'] else 'no-rect')
+        if 'amp' in safe: x265_params.append('amp' if safe['amp'] else 'no-amp')
+        if 'early-skip' in safe: x265_params.append('early-skip' if safe['early-skip'] else 'no-early-skip')
+        if 'rskip' in safe: x265_params.append('rskip' if safe['rskip'] else 'no-rskip')
+        if 'fast-intra' in safe: x265_params.append('fast-intra' if safe['fast-intra'] else 'no-fast-intra')
+        if 'b-intra' in safe: x265_params.append('b-intra' if safe['b-intra'] else 'no-b-intra')
+        if 'cu-lossless' in safe: x265_params.append('cu-lossless' if safe['cu-lossless'] else 'no-cu-lossless')
+        if 'tskip-fast' in safe: x265_params.append('tskip-fast' if safe['tskip-fast'] else 'no-tskip-fast')
+        if 'rd-refine' in safe: x265_params.append('rd-refine' if safe['rd-refine'] else 'no-rd-refine')
+        if 'analysis-mode' in safe: self.check_condition('analysis-mode', safe['analysis-mode'], False, 0 <= safe['analysis-mode'] <= 2, x265_params)
+        if 'analysis-file' in safe: self.check_condition('analysis-file', safe['analysis-file'], False, True, x265_params)
+        if 'rdoq-level' in safe:
+            if safe['rdoq-level'] == -1: x265_params.append('no-rdoq-level')
+            else: self.check_condition('rdoq-level', safe['rdoq-level'], False, 0 <= safe['rdoq-level'] <= 2, x265_params)
+        if 'tu-intra-depth' in safe: self.check_condition('tu-intra-depth', safe['tu-intra-depth'], 1, 1 <= safe['tu-intra-depth'] <= 4, x265_params)
+        if 'tu-inter-depth' in safe: self.check_condition('tu-inter-depth', safe['tu-inter-depth'], 1, 1 <= safe['tu-inter-depth'] <= 4, x265_params)
+        if 'limit-tu' in safe: self.check_condition('limit-tu', safe['limit-tu'], 0, 0 <= safe['limit-tu'] <= 4, x265_params)
+        if 'nr-intra' in safe: self.check_condition('nr-intra', safe['nr-intra'], 0, 0 <= safe['nr-intra'] <= 2000, x265_params)
+        if 'nr-inter' in safe: self.check_condition('nr-inter', safe['nr-inter'], 0, 0 <= safe['nr-inter'] <= 2000, x265_params)
+        if 'rdpenalty' in safe: self.check_condition('rdpenalty', safe['rdpenalty'], 0, 0 <= safe['rdpenalty'] <= 2, x265_params)
+        if 'tskip' in safe: x265_params.append('tskip' if safe['tskip'] else 'no-tskip')
+        if 'max-tu-size' in safe: self.check_condition('max-tu-size', safe['max-tu-size'], 32, safe['max-tu-size'] in [4,8,16,32], x265_params)
+        if 'dynamic-rd' in safe: self.check_condition('dynamic-rd', safe['dynamic-rd'], 0, 0 <= safe['dynamic-rd'] <= 4, x265_params)
+        if 'ssim-rd' in safe: x265_params.append('ssim-rd' if safe['ssim-rd'] else 'no-ssim-rd')
+        if 'max-merge' in safe: self.check_condition('max-merge', safe['max-merge'], 2, 1 <= safe['max-merge'] <= 5, x265_params)
+        if 'me' in safe: self.check_condition('me', safe['me'], 1, 0 <= safe['me'] <= 5, x265_params)
+        if 'subme' in safe: self.check_condition('subme', safe['subme'], 2, 0 <= safe['subme'] <= 7, x265_params)
+        if 'merange' in safe: self.check_condition('merange', safe['merange'], 57, 0 <= safe['merange'] <= 32768, x265_params)
+        if 'temporal-mvp' in safe: x265_params.append('temporal-mvp' if safe['temporal-mvp'] else 'no-temporal-mvp')
+        if 'weightp' in safe: x265_params.append('weightp' if safe['weightp'] else 'no-weightp')
+        if 'weightb' in safe: x265_params.append('weightb' if safe['weightb'] else 'no-weightb')
+        if 'analyze-src-pics' in safe: x265_params.append('analyze-src-pics' if safe['analyze-src-pics'] else 'no-analyze-src-pics')
+        if 'strong-intra-smoothing' in safe: x265_params.append('strong-intra-smoothing' if safe['strong-intra-smoothing'] else 'no-strong-intra-smoothing')
+        if 'constrained-intra' in safe: x265_params.append('constrained-intra' if safe['constrained-intra'] else 'no-constrained-intra')
+        if 'psy-rd' in safe: self.check_condition('psy-rd', safe['psy-rd'], 2.0, 0.0 <= safe['psy-rd'] <= 5.0, x265_params)
+        if 'psy-rdoq' in safe: self.check_condition('psy-rdoq', safe['psy-rdoq'], 0.0, 0.0 <= safe['psy-rdoq'] <= 50.0, x265_params)
+        if 'open-gop' in safe: x265_params.append('open-gop' if safe['open-gop'] else 'no-open-gop')
+        if 'keyint' in safe: self.check_condition('keyint', safe['keyint'], 250, True, x265_params)
+        if 'min-keyint' in safe: self.check_condition('min-keyint', safe['min-keyint'], 0, 0 <= safe['min-keyint'], x265_params)
+        if 'scenecut' in safe: x265_params.append('scenecut' if safe['scenecut'] else 'no-scenecut')
+        if 'scenecut-bias' in safe: self.check_condition('scenecut-bias', safe['scenecut-bias'], 5.0, 0.0 <= safe['scenecut-bias'] <= 100.0, x265_params)
+        if 'intra-refresh' in safe:
+            if safe['intra-refresh']: x265_params.append('intra-refresh')
+        if 'rc-lookahead' in safe: self.check_condition('rc-lookahead', safe['rc-lookahead'], 20, 0 < safe['rc-lookahead'] <= 250, x265_params)
+        if 'lookahead-slices' in safe: self.check_condition('lookahead-slices', safe['lookahead-slices'], False, 0 <= safe['lookahead-slices'] <= 16, x265_params)
+        if 'lookahead-threads' in safe: self.check_condition('lookahead-threads', safe['lookahead-threads'], 0, True, x265_params)
+        if 'b-adapt' in safe: self.check_condition('b-adapt', safe['b-adapt'], 2, 0 <= safe['b-adapt'] <= 2, x265_params)
+        if 'bframes' in safe: self.check_condition('bframes', safe['bframes'], 4, 0 <= safe['bframes'] <= 16, x265_params)
+        if 'bframe-bias' in safe: self.check_condition('bframe-bias', safe['bframe-bias'], 0, -90 <= safe['bframe-bias'] <= 100, x265_params)
+        if 'b-pyramid' in safe: x265_params.append('b-pyramid' if safe['b-pyramid'] else 'no-b-pyramid')
+        if 'bitrate' in safe: self.check_condition('bitrate', safe['bitrate'], 0, 0 <= safe['bitrate'], x265_params)
+        if 'crf' in safe: self.check_condition('crf', safe['crf'], 28.0, 0 <= safe['crf'] <= 51.0, x265_params)
+        if 'crf-max' in safe: self.check_condition('crf-max', safe['crf-max'], False, 0 <= safe['crf-max'] <= 51.0, x265_params)
+        if 'crf-min' in safe: self.check_condition('crf-min', safe['crf-min'], False, 0 <= safe['crf-min'] <= 51.0, x265_params)
+        if 'vbv-bufsize' in safe: self.check_condition('vbv-bufsize', safe['vbv-bufsize'], 0, 0 <= safe['vbv-bufsize'], x265_params)
+        if 'vbv-maxrate' in safe: self.check_condition('vbv-maxrate', safe['vbv-maxrate'], 0, 0 <= safe['vbv-maxrate'], x265_params)
+        if 'vbv-init' in safe: self.check_condition('vbv-init', safe['vbv-init'], 0.9, 0.0 <= safe['vbv-init'] <= 1.0, x265_params)
+        if 'qp' in safe: self.check_condition('qp', safe['qp'], False, 0 <= safe['qp'] <= 51, x265_params)
+        if 'lossless' in safe: x265_params.append('lossless' if safe['lossless'] else 'no-lossless')
+        if 'aq-mode' in safe: self.check_condition('aq-mode', safe['aq-mode'], 1, 0 <= safe['aq-mode'] <= 3, x265_params)
+        if 'aq-strength' in safe: self.check_condition('aq-strength', safe['aq-strength'], 1.0, 0.0 <= safe['aq-strength'] <= 3.0, x265_params)
+        if 'aq-motion' in safe: x265_params.append('aq-motion' if safe['aq-motion'] else 'no-aq-motion')
+        if 'qg-size' in safe: self.check_condition('qg-size', safe['qg-size'], False, safe['qg-size'] in [8, 16, 32, 64], x265_params)
+        if 'cutree' in safe: x265_params.append('cutree' if safe['cutree'] else 'no-cutree')
+        if 'pass' in safe: self.check_condition('pass', safe['pass'], False, 0 <= safe['pass'] <= 3, x265_params)
+        if 'stats' in safe: self.check_condition('stats', safe['stats'], False, True, x265_params)
+        if 'slow-firstpass' in safe: x265_params.append('slow-firstpass' if safe['slow-firstpass'] else 'no-slow-firstpass')
+        if 'multi-pass-opt-analysis' in safe: x265_params.append('multi-pass-opt-analysis' if safe['multi-pass-opt-analysis'] else 'no-multi-pass-opt-analysis')
+        if 'multi-pass-opt-distortion' in safe: x265_params.append('multi-pass-opt-distortion' if safe['multi-pass-opt-distortion'] else 'no-multi-pass-opt-distortion')
+        if 'strict-cbr' in safe: x265_params.append('strict-cbr' if safe['strict-cbr'] else 'no-strict-cbr')
+        if 'cbqpoffs' in safe: self.check_condition('cbqpoffs', safe['cbqpoffs'], 0, -12 <= safe['cbqpoffs'] <= 12, x265_params)
+        if 'crqpoffs' in safe: self.check_condition('crqpoffs', safe['crqpoffs'], 0, -12 <= safe['crqpoffs'] <= 12, x265_params)
+        if 'qcomp' in safe: self.check_condition('qcomp', safe['qcomp'], 0.6, 0 <= safe['qcomp'] <= 1, x265_params)
+        if 'qpstep' in safe: self.check_condition('qpstep', safe['qpstep'], 4, 0 <= safe['qpstep'], x265_params)
+        if 'qpmin' in safe: self.check_condition('qpmin', safe['qpmin'], 0, 0 <= safe['qpmin'], x265_params)
+        if 'qpmax' in safe: self.check_condition('qpmax', safe['qpmax'], 69, 0 <= safe['qpmax'], x265_params)
+        if 'rc-grain' in safe: x265_params.append('rc-grain' if safe['rc-grain'] else 'no-rc-grain')
+        if 'qblur' in safe: self.check_condition('qblur', safe['qblur'], 0.5, 0 <= safe['qblur'], x265_params)
+        if 'cplxblur' in safe: self.check_condition('cplxblur', safe['cplxblur'], 20, 0 <= safe['cplxblur'], x265_params)
+        if 'signhide' in safe: x265_params.append('signhide' if safe['signhide'] else 'no-signhide')
+        if 'qpfile' in safe: self.check_condition('qpfile', safe['qpfile'], False, True, x265_params)
+        if 'scaling-list' in safe: self.check_condition('scaling-list', safe['scaling-list'], False, True, x265_params)
+        if 'lambda-file' in safe: self.check_condition('lambda-file', safe['lambda-file'], False, True, x265_params)
+        if 'sao' in safe: x265_params.append('sao' if safe['sao'] else 'no-sao')
+        if 'sao-non-deblock' in safe: x265_params.append('sao-non-deblock' if safe['sao-non-deblock'] else 'no-sao-non-deblock')
+        if 'sar' in safe: self.check_condition('sar', safe['sar'], False, 1 <= safe['sar'] <= 16, x265_params)
+        if 'display-window' in safe: self.check_condition('display-window', safe['display-window'], False, safe['display-window'] in ['left', 'top', 'right', 'bottom'], x265_params)
+        if 'overscan' in safe: self.check_condition('overscan', safe['overscan'], False, safe['overscan'] in ['show', 'crop'], x265_params)
+        if 'videoformat' in safe: self.check_condition('videoformat', safe['videoformat'], False, 0 <= safe['videoformat'] <= 5, x265_params)
+        if 'range' in safe: self.check_condition('range', safe['range'], False, safe['range'] in ['full', 'limited'], x265_params)
+        if 'colorprim' in safe: self.check_condition('colorprim', safe['colorprim'], False, 1 <= safe['colorprim'] <= 9, x265_params)
+        if 'transfer' in safe: self.check_condition('transfer', safe['transfer'], False, 1 <= safe['transfer'] <= 18, x265_params)
+        if 'colormatrix' in safe: self.check_condition('colormatrix', safe['colormatrix'], False, 0 <= safe['colormatrix'] <= 10, x265_params)
+        if 'chromaloc' in safe: self.check_condition('chromaloc', safe['chromaloc'], False, 0 <= safe['chromaloc'] <= 5, x265_params)
+        if 'hdr' in safe: x265_params.append('hdr' if safe['hdr'] else 'no-hdr')
+        if 'hdr-opt' in safe: x265_params.append('hdr-opt' if safe['hdr-opt'] else 'no-hdr-opt')
+        if 'min-luma' in safe: self.check_condition('min-luma', safe['min-luma'], False, 0 <= safe['min-luma'], x265_params)
+        if 'max-luma' in safe: self.check_condition('max-luma', safe['max-luma'], False, 0 <= safe['max-luma'], x265_params)
+        if 'annexb' in safe: x265_params.append('annexb' if safe['annexb'] else 'no-annexb')
+        if 'repeat-headers' in safe: x265_params.append('repeat-headers' if safe['repeat-headers'] else 'no-repeat-headers')
+        if 'aud' in safe: x265_params.append('aud' if safe['aud'] else 'no-aud')
+        if 'hrd' in safe: x265_params.append('hrd' if safe['hrd'] else 'no-hrd')
+        if 'info' in safe: x265_params.append('info' if safe['info'] else 'no-info')
+        if 'hash' in safe: self.check_condition('hash', safe['hash'], False, 1 <= safe['hash'] <= 3, x265_params)
+        if 'temporal-layers' in safe: x265_params('temporal-layers' if safe['temporal-layers'] else 'no-temporal-layers')
+        if 'log2-max-poc-lsb' in safe: self.check_condition('log2-max-poc-lsb', safe['log2-max-poc-lsb'], 8, 0 <= safe['log2-max-poc-lsb'], x265_params)
+        if 'vui-timing-info' in safe: x265_params.append('vui-timing-info' if safe['vui-timing-info'] else 'no-vui-timing-info')
+        if 'vui-hrd-info' in safe: x265_params.append('vui-hrd-info' if safe['vui-hrd-info'] else 'no-vui-hrd-info')
+        if 'opt-qp-pps' in safe: x265_params.append('opt-qp-pps' if safe['opt-qp-pps'] else 'no-opt-qp-pps')
+        if 'opt-ref-list-length-pps' in safe: x265_params.append('opt-ref-list-length-pps' if safe['opt-ref-list-length-pps'] else 'no-opt-ref-list-length-pps')
+        if 'multi-pass-opt-rps' in safe: x265_params.append('multi-pass-opt-rps' if safe['multi-pass-opt-rps'] else 'no-multi-pass-opt-rps')
+        if 'opt-cu-delta-qp' in safe: x265_params.append('opt-cu-delta-qp' if safe['opt-cu-delta-qp'] else 'no-opt-cu-delta-qp')
+        
+        if len(x265_params) > 0:
+            optlist.extend(['-x265-params', ':'.join(map(str,x265_params))])
+        
+        return optlist
 class H264Codec(VideoCodec):
     """
     H.264/AVC video codec.
@@ -1171,7 +1458,7 @@ audio_codec_list = [
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Ffv1Codec, Mpeg1Codec,
-    Mpeg2Codec, HEVCNvencCodec, H264NvencCodec
+    Mpeg2Codec, HEVCNvencCodec, H264NvencCodec, HEVCCodec
 ]
 
 subtitle_codec_list = [
