@@ -1080,10 +1080,10 @@ class HEVCCodec(VideoCodec):
     
     def check_condition(self, name, default, value, condition, x265_params):
         if condition:
-            x265_params.append(name+':'+str(value))
+            x265_params.append(name+'='+str(value))
         else:
             if type(default) != bool:
-                x265_params.append(name+':'+str(default))
+                x265_params.append(name+'='+str(default))
             logger.error(str(value)+' is not a valid '+name+' for libx265 encoder ...')
     
     def _codec_specific_produce_ffmpeg_list(self, safe):
