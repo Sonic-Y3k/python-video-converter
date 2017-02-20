@@ -609,6 +609,173 @@ class TheoraCodec(VideoCodec):
             optlist.extend(['-qscale:v', safe['quality']])
         return optlist
 
+class H264NvencCodec(VideoCodec):
+    """
+    H264/AVC Video codec by Nvidia.
+    """
+    codec_name = 'nvenc_h264'
+    ffmpeg_codec_name = 'nvenc_h264'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'preset': str,
+        'profile': str,
+        'level': str,
+        'rc': str,
+        'rc-lookahead': int,
+        'surfaces': int,
+        'cbr': bool,
+        '2pass': bool,
+        'gpu': int,
+        'delay': int,
+        'no-scenecut': bool,
+        'forced-idr': bool,
+        'b_adapt': bool,
+        'spatial-aq': bool,
+        'temporal-aq': bool,
+        'zerolatency': bool,
+        'nonref_p': bool,
+        'strict_gop': bool,
+        'aq-strength': bool,
+        'cq': float,
+        'qmin': float,
+        'qmax': float
+    })
+    
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'preset' in safe:
+            if safe['preset'] in ['default', 'slow', 'medium', 'fast', 'hp', 'hq', 'bd', 'll', 'llhq', 'llhp', 'lossless', 'losslesshp']:
+                optlist.extend(['-preset', safe['preset']])
+            else:
+                logger.error(safe['preset']+' is not a valid preset for nvenc_h264 encoder ...')
+                optlist.extend(['-preset', 'medium'])
+        if 'profile' in safe:
+            if safe['profile'] in ['baseline', 'main', 'high', 'high444p']:
+                optlist.extend(['-profile', safe['profile']])
+            else:
+                logger.error(safe['profile']+' is not a valid profile for nvenc_h264 encoder ...')
+                optlist.extend(['-profile', 'main'])
+        if 'level' in safe:
+            if safe['level'] in ['auto', '1', '1.0', '1b', '1.0b', '1.1', '1.2', '1.3', '2', '2.0', '2.1', '2.2', '3', '3.0', '3.1', '3.2', '4', '4.0', '4.1', '4.2', '5', '5.0', '5.1']:
+                optlist.extend(['-level', safe['level']])
+            else:
+                logger.error(safe['level']+' is not a valid level for nvenc_h264 encoder ...')
+                optlist.extend(['-level', 'auto'])
+        if 'rc' in safe:
+            if safe['rc'] in ['constqp', 'vbr', 'cbr', 'vbr_minqp', 'll_2pass_quality', 'll_2pass_size', 'vbr_2pass']:
+                optlist.extend(['-rc', safe['rc']])
+            else:
+                logger.error(safe['rc']+' is not a valid rc for nvenc_h264 encoder ...')
+                optlist.extend(['-rc', '-1'])
+        if 'rc-lookahead' in safe:
+            if safe['rc-lookahead'] >= -1:
+                optlist.extend(['-rc-lookahead', str(safe['rc-lookahead'])])
+            else:
+                logger.error(str(safe['rc-lookahead'])+' is not a valid rc-lookahead for nvenc_h264 encoder ...')
+                optlist.extend(['-rc-lookahead', '-1'])
+        if 'surfaces' in safe:
+            if safe['surfaces'] >= 0:
+                optlist.extend(['-surfaces', str(safe['surfaces'])])
+            else:
+                logger.error(str(safe['surfaces'])+' is not a valid surfaces for nvenc_h264 encoder ...')
+                optlist.extend(['-surfaces', '32'])
+        if 'cbr' in safe:
+            if type(safe['cbr']) == bool:
+                optlist.extend(['-cbr', str(int(safe['cbr']))])
+            else:
+                logger.error(str(int(safe['cbr']))+' is not a valid cbr for nvenc_h264 encoder ...')
+                optlist.extend(['-cbr', '0'])
+        if '2pass' in safe:
+            if type(safe['2pass']) == bool:
+                optlist.extend(['-2pass', str(int(safe['2pass']))])
+            else:
+                logger.error(str(int(safe['2pass']))+' is not a valid 2pass for nvenc_h264 encoder ...')
+                optlist.extend(['-2pass', 'auto'])
+        if 'gpu' in safe:
+            if safe['gpu'] >= -2:
+                optlist.extend(['-gpu', str(safe['gpu'])])
+            else:
+                logger.error(str(safe['gpu'])+' is not a valid gpu for nvenc_h264 encoder ...')
+                optlist.extend(['-gpu', 'any'])
+        if 'delay' in safe:
+            if safe['delay'] >= 0:
+                optlist.extend(['-delay', str(safe['delay'])])
+            else:
+                logger.error(str(safe['delay'])+' is not a valid delay for nvenc_h264 encoder ...')
+        if 'no-scenecut' in safe:
+            if type(safe['no-scenecut']) == bool:
+                optlist.extend(['-no-scenecut', str(int(safe['no-scenecut']))])
+            else:
+                logger.error(str(int(safe['no-scenecut']))+' is not a valid no-scenecut for nvenc_h264 encoder ...')
+                optlist.extend(['-no-scenecut', '0'])
+        if 'forced-idr' in safe:
+            if type(safe['forced-idr']) == bool:
+                optlist.extend(['-forced-idr', str(int(safe['forced-idr']))])
+            else:
+                logger.error(str(int(safe['forced-idr']))+' is not a valid forced-idr for nvenc_h264 encoder ...')
+                optlist.extend(['-forced-idr', 'auto'])
+        if 'b_adapt' in safe:
+            if type(safe['b_adapt']) == bool:
+                optlist.extend(['-b_adapt', str(int(safe['b_adapt']))])
+            else:
+                logger.error(str(int(safe['b_adapt']))+' is not a valid b_adapt for nvenc_h264 encoder ...')
+                optlist.extend(['-b_adapt', '1'])
+        if 'spatial-aq' in safe:
+            if type(safe['spatial-aq']) == bool:
+                optlist.extend(['-spatial-aq', str(int(safe['spatial-aq']))])
+            else:
+                logger.error(str(int(safe['spatial-aq']))+' is not a valid spatial-aq for nvenc_h264 encoder ...')
+                optlist.extend(['-spatial-aq', '0'])
+        if 'temporal-aq' in safe:
+            if type(safe['temporal-aq']) == bool:
+                optlist.extend(['-temporal-aq', str(int(safe['temporal-aq']))])
+            else:
+                logger.error(str(int(safe['temporal-aq']))+' is not a valid temporal-aq for nvenc_h264 encoder ...')
+                optlist.extend(['-temporal-aq', '0'])
+        if 'zerolatency' in safe:
+            if type(safe['zerolatency']) == bool:
+                optlist.extend(['-zerolatency', str(int(safe['zerolatency']))])
+            else:
+                logger.error(str(int(safe['zerolatency']))+' is not a valid zerolatency for nvenc_h264 encoder ...')
+                optlist.extend(['-zerolatency', '0'])
+        if 'nonref_p' in safe:
+            if type(safe['nonref_p']) == bool:
+                optlist.extend(['-nonref_p', str(int(safe['nonref_p']))])
+            else:
+                logger.error(str(int(safe['nonref_p']))+' is not a valid nonref_p for nvenc_h264 encoder ...')
+                optlist.extend(['-nonref_p', '0'])
+        if 'strict_gop' in safe:
+            if type(safe['strict_gop']) == bool:
+                optlist.extend(['-strict_gop', str(int(safe['strict_gop']))])
+            else:
+                logger.error(str(int(safe['strict_gop']))+' is not a valid strict_gop for nvenc_h264 encoder ...')
+                optlist.extend(['-strict_gop', '0'])
+        if 'aq-strength' in safe:
+            if 1 <= safe['aq-strength'] <= 15:
+                optlist.extend(['-aq-strength', str(safe['aq-strength'])])
+            else:
+                logger.error(str(safe['aq-strength'])+' is not a valid aq-strength for nvenc_h264 encoder ...')
+                optlist.extend(['-aq-strength', '8'])
+        if 'cq' in safe:
+            if 0 <= safe['cq'] <= 51:
+                optlist.extend(['-cq', str(safe['cq'])])
+            else:
+                logger.error(str(safe['cq'])+' is not a valid cq for hevc_nvenc encoder ...')
+                optlist.extend(['-cq', '0'])
+        if 'qmin' in safe:
+            if 0 <= safe['qmin'] <= 51:
+                optlist.extend(['-qc', str(safe['qmin'])])
+            else:
+                logger.error(str(safe['qmin'])+' is not a valid qmin for hevc_nvenc encoder ...')
+                optlist.extend(['-qmin', '0'])
+        if 'qmax' in safe:
+            if 0 <= safe['qmax'] <= 51:
+                optlist.extend(['-qc', str(safe['qmax'])])
+            else:
+                logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
+                optlist.extend(['-qmax', '51'])
+        return optlist
+    
 class HEVCNvencCodec(VideoCodec):
     """
     HEVC/AVC Video codec by Nvidia.
@@ -1004,7 +1171,7 @@ audio_codec_list = [
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Ffv1Codec, Mpeg1Codec,
-    Mpeg2Codec, HEVCNvencCodec
+    Mpeg2Codec, HEVCNvencCodec, H264NvencCodec
 ]
 
 subtitle_codec_list = [
