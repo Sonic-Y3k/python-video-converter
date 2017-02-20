@@ -275,7 +275,7 @@ class Converter(object):
         if info['format']['duration'] < 0.01:
             raise ConverterError('Zero-length media')
         for timecode in self.ffmpeg.analyze(infile, audio_level, interlacing,
-                                            crop, start, duration, end, timeout, nice, use_decoder=use_decoder):
+                                            crop, start, duration, end, timeout, nice):
             if isinstance(timecode, float):
                 yield int((100.0 * timecode) / info['format']['duration'])
             else:
