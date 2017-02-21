@@ -225,7 +225,7 @@ class VideoCodec(BaseCodec):
         return optlist
 
     def _div_by_2(self, d):
-        return d + 1 if d % 2 else d
+        return float(d) + 1 if float(d) % 2 else float(d)
 
     def _aspect_corrections(self, sw, sh, max_width, max_height, sizing_policy):
         if not max_width or not max_height or not sw or not sh:
@@ -425,9 +425,9 @@ class VideoCodec(BaseCodec):
         if 'bufsize' in safe:
             optlist.extend(['-bufsize', str(safe['bufsize']) + 'k'])
         if w and h:
-            optlist.extend(['-s', '{0}x{1}'.format(w, h)])
+            optlist.extend(['-s', '{0}x{1}'.format(int(w), int(h))])
             if 'aspect' in safe:
-                optlist.extend(['-aspect', '{0}:{1}'.format(w, h)])
+                optlist.extend(['-aspect', '{0}:{1}'.format(int(w), int(h))])
 
         if safe.get('crop'):
             optlist = self._extend_vf(optlist, 'crop={0}'.format(safe['crop']))

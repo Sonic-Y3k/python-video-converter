@@ -10,6 +10,21 @@ import logging
 import locale
 import json
 import time
+import types
+try:
+    unicode = unicode
+except NameError:
+    # 'unicode' is undefined, must be Python 3
+    str = str
+    unicode = str
+    bytes = bytes
+    basestring = (str,bytes)
+else:
+    # 'unicode' exists, must be Python 2
+    str = str
+    unicode = unicode
+    bytes = str
+    basestring = basestring
 
 logger = logging.getLogger(__name__)
 
@@ -293,7 +308,7 @@ class FFMpeg(object):
             else:
                 mapping = FIELD_MAPPING.get(parent, {})
 
-            for key, value in branch.items():
+            for key, value in list(branch.items()):
                 if key in ('streams', 'audio', 'video'):
                     continue
 
@@ -502,12 +517,19 @@ class FFMpeg(object):
             if not ret:
                 break
 
-            total_output.append(ret)
-            buf.append(ret)
-            if '\r' in ret:
+            try:
+                total_output.append(str(ret, console_encoding))
+                buf.append(str(ret, console_encoding))
+            except TypeError:
+                total_output.append(ret)
+                buf.append(ret)
+            if b'\r' in ret:
                 buf = ''.join(buf)
-                buf = buf.decode(console_encoding, 'ignore')
-                line, buf = buf.split('\r', 1)
+                try:
+                    buf = buf.decode(console_encoding, 'ignore')
+                except AttributeError:
+                    pass
+                line, buf = buf.split('\r', 1)                
                 buf = [buf]
                 tmp = pat.search(line)
                 if tmp:
@@ -516,7 +538,10 @@ class FFMpeg(object):
                     yield timecode
 
         total_output = ''.join(total_output)
-        total_output = total_output.decode(console_encoding, 'ignore')
+        try:
+            total_output = total_output.decode(console_encoding, 'ignore')
+        except AttributeError:
+            pass
         if not yielded:
             # There may have been a single time, check it
             tmp = pat.search(total_output)
@@ -1098,7 +1123,7 @@ def parse_crop(data, size, fps):
         for crop_width, crop_height, x, y in matches
     )
     # Regroup values by side.
-    values = zip(*values)
+    values = list(zip(*values))
 
     # Count the number of occurences of each width/height.
     def counter(collection, limit):
@@ -1118,10 +1143,19 @@ def parse_crop(data, size, fps):
 
     # For each side find the larger gap between the number of frames of each
     # dimension and keep the dimension before the gap.
-    for pos, result in results.iteritems():
+
+    try:
+        iteritems = results.iteritems()
+    except AttributeError:
+        iteritems = results.items()
+
+    for pos, result in iteritems:
         if result:
-            dims = result.keys()
-            dims.sort()
+            dims = list(result.keys())
+            try:
+                dims.sort()
+            except AttributeError:
+                sorted(dims)
 
             length = width if pos in ('left', 'right') else height
             threshold = int(round(length * 0.03))
@@ -1186,4 +1220,4 @@ def parse_crop(data, size, fps):
         if y_sub:
             results['top'] = int(round(results['top'] * (height - crop_height) / y_sub))
 
-    return '{0}:{1}:{2}:{3}'.format(crop_width, crop_height, results['left'], results['top'])
+    return '{0}:{1}:{2}:{3}'.format(int(crop_width), int(crop_height), results['left'], results['top'])
