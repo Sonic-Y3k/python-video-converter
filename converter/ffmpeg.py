@@ -375,7 +375,8 @@ class FFMpeg(object):
                 stdout_data, _ = p.communicate()
                 stdout_data = stdout_data.decode(console_encoding, 'ignore')
                 try:
-                    exec stdout_data in locals()
+                    exec (stdout_datam, locals())
+
                     duration = float(lsdvd['track'][0]['length'])
                 except Exception:
                     pass
@@ -445,7 +446,7 @@ class FFMpeg(object):
             if 0 < nice < 20:
                 cmds = ['nice', '-n', str(nice)] + cmds
             else:
-                raise FFMpegError("Invalid nice value: {0}".format(nice))
+                raise FFMpegError("Invalid nice value: "+str(nice))
 
         if 'pipe:' in cmds:
             if infile.upper().endswith('.VOB'):
@@ -829,7 +830,7 @@ class FFMpeg(object):
             max_width = int(aspect * max_height)
 
         if sizing_policy not in ['Fit', 'Fill', 'Stretch', 'Keep', 'ShrinkToFit', 'ShrinkToFill']:
-            print "invalid option {0}".format(sizing_policy)
+            print ("invalid option {0}".format(sizing_policy))
             return sw, sh, None
 
         """
@@ -953,7 +954,7 @@ class FFMpeg(object):
 
             try:
                 self.thumbnail_fast(fname, time, outfile, size, quality, crop, deinterlace)
-            except (DVDError, SeekError), err:
+            except (DVDError, SeekError) as err:
                 if no_slow:
                     errors[outfile] = err
                 else:
@@ -962,7 +963,7 @@ class FFMpeg(object):
                         yield timecode
                     raise StopIteration()
 
-            except Exception, err:
+            except Exception as err:
                 errors[outfile] = err
 
         if errors:
