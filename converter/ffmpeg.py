@@ -458,11 +458,17 @@ class FFMpeg(object):
 
         if timeout:
             def on_sigalrm(*_):
-                signal.signal(signal.SIGALRM, signal.SIG_DFL)
+                try:
+                    signal.signal(signal.SIGALRM, signal.SIG_DFL)
+                except ValueError:
+                    pass
                 raise Exception('timed out while waiting for ffmpeg')
-
-            signal.signal(signal.SIGALRM, on_sigalrm)
-
+            
+            try:
+                signal.signal(signal.SIGALRM, on_sigalrm)
+            except ValueError:
+                pass
+                
         try:
             if preprocess:
                 self.current_process = self._spawn(cmds, preprocess.stdout)
@@ -480,12 +486,18 @@ class FFMpeg(object):
 
         while True:
             if timeout:
-                signal.alarm(timeout)
+                try:
+                    signal.alarm(timeout)
+                except ValueError:
+                    pass
 
             ret = p.stderr.read(10)
 
             if timeout:
-                signal.alarm(0)
+                try:
+                    signal.alarm(0)
+                except ValueError:
+                    pass
             if not ret:
                 break
 
@@ -513,7 +525,10 @@ class FFMpeg(object):
                 yield timecode
 
         if timeout:
-            signal.signal(signal.SIGALRM, signal.SIG_DFL)
+            try:
+                signal.signal(signal.SIGALRM, signal.SIG_DFL)
+            except ValueError:
+                pass
 
         p.communicate()  # wait for process to exit
         if preprocess:
