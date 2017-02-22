@@ -2,7 +2,7 @@
 
 import os
 
-from converter.avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list
+from converter.avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list, decoder_codec_list
 from converter.formats import format_list
 from converter.ffmpeg import FFMpeg, parse_time, timecode_to_seconds, FFMpegError
 
@@ -28,8 +28,13 @@ class Converter(object):
         self.video_codecs = {}
         self.audio_codecs = {}
         self.subtitle_codecs = {}
+        self.decoder_codecs = {}
         self.formats = {}
 
+        for cls in decoder_codec_list:
+            name = cls.codec_name
+            self.decoder_codecs[name] = cls
+        
         for cls in audio_codec_list:
             name = cls.codec_name
             self.audio_codecs[name] = cls
@@ -64,9 +69,26 @@ class Converter(object):
         if format_options is None:
             raise ConverterError('Unknown container format error')
 
+            
         if 'audio' not in opt and 'video' not in opt:
             raise ConverterError('Neither audio nor video streams requested')
 
+        # decoder options
+        if 'decoder' not in opt:
+            opt_decoder = {'codec': None}
+        else:
+            opt_decoder = opt['decoder']
+            if not isinstance(opt_decoder, dict) or 'codec' not in opt_decoder:
+                raise ConverterError('Invalid decoder codec specification')
+
+        d = opt_decoder['codec']
+        if d not in self.decoder_codecs:
+            raise ConverterError('Requested unknown decoder codec ' + str(d))
+
+        decoder_options = self.decoder_codecs[d]().parse_options(opt_decoder)
+        if decoder_options is None:
+            raise ConverterError('Unknown decoder codec error')
+            
         # audio options
         if 'audio' not in opt or twopass == 1:
             opt_audio = {'codec': None}
@@ -137,7 +159,7 @@ class Converter(object):
             format_options.extend(['-to', end])
 
         # aggregate all options
-        optlist = audio_options + video_options + subtitle_options + format_options
+        optlist = audio_options + video_options + subtitle_options + decoder_options + format_options
 
         if twopass == 1:
             optlist.extend(['-pass', '1'])
@@ -146,7 +168,7 @@ class Converter(object):
 
         return optlist
 
-    def convert(self, infile, outfile, options, twopass=False, timeout=10, nice=None, use_decoder=None, title=None):
+    def convert(self, infile, outfile, options, twopass=False, timeout=10, nice=None, title=None):
         """
         Convert media file (infile) according to specified options, and
         save it to outfile. For two-pass encoding, specify the pass (1 or 2)
@@ -191,7 +213,7 @@ class Converter(object):
 
         if not isinstance(options, dict):
             raise ConverterError('Invalid options')
-
+                
         if not os.path.exists(infile) and not self.ffmpeg.is_url(infile):
             raise ConverterError("Source file doesn't exist: " + infile)
 
@@ -228,17 +250,17 @@ class Converter(object):
         if twopass:
             optlist1 = self.parse_options(options, 1)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
-                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
+                                                timeout=timeout, nice=nice):
                 yield int((50.0 * timecode) / duration)
 
             optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
-                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
+                                                timeout=timeout, nice=nice):
                 yield int(50.0 + (50.0 * timecode) / duration)
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
-                                                timeout=timeout, nice=nice, use_decoder=use_decoder):
+                                                timeout=timeout, nice=nice):
                 yield int((100.0 * timecode) / duration)
 
     def analyze(self, infile, audio_level=True, interlacing=True, crop=False, start=None, duration=None, end=None, timeout=10, nice=None, title=None):

@@ -156,6 +156,22 @@ class SubtitleCodec(BaseCodec):
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
         return optlist
 
+class DecoderCodec(BaseCodec):
+    """
+    """
+    encoder_options = {
+        'codec': str,
+    }
+    
+    def parse_options(self, opt):
+        super(DecoderCodec, self).parse_options(opt)
+        safe = self.safe_options(opt)
+        safe = self._codec_specific_parse_options(safe)
+
+        optlist = ['-decoder', self.ffmpeg_codec_name]
+        
+        optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
+        return optlist
 
 class VideoCodec(BaseCodec):
     """
@@ -477,6 +493,15 @@ class SubtitleNullCodec(BaseCodec):
     def parse_options(self, opt):
         return ['-sn']
 
+class DecoderNullCodec(BaseCodec):
+    """
+    Null video codec (no video).
+    """
+
+    codec_name = None
+
+    def parse_options(self, opt):
+        return []
 
 class AudioCopyCodec(BaseCodec):
     """
@@ -1449,10 +1474,85 @@ class DVDSub(SubtitleCodec):
     codec_name = 'dvdsub'
     ffmpeg_codec_name = 'dvdsub'
 
+class H263CuvidCodec(DecoderCodec):
+    """
+    H263 cuda decoder
+    """
+    codec_name = 'h263_cuvid'
+    ffmpeg_codec_name = 'h263_cuvid'
+    
+class H264CuvidCodec(DecoderCodec):
+    """
+    H264 cuda decoder
+    """
+    codec_name = 'h264_cuvid'
+    ffmpeg_codec_name = 'h264_cuvid'
 
+class HEVCCuvidCodec(DecoderCodec):
+    """
+    HEVC cuda decoder
+    """
+    codec_name = 'hevc_cuvid'
+    ffmpeg_codec_name = 'hevc_cuvid'
+
+class MJPEGCuvidCodec(DecoderCodec):
+    """
+    MJPEG cuda decoder
+    """
+    codec_name = 'mjpeg_cuvid'
+    ffmpeg_codec_name = 'mjpeg_cuvid'
+    
+class Mpeg1CuvidCodec(DecoderCodec):
+    """
+    MPEG1 cuda decoder
+    """
+    codec_name = 'mpeg1_cuvid'
+    ffmpeg_codec_name = 'mpeg1_cuvid'
+
+class Mpeg2CuvidCodec(DecoderCodec):
+    """
+    MPEG2 cuda decoder
+    """
+    codec_name = 'mpeg2_cuvid'
+    ffmpeg_codec_name = 'mpeg2_cuvid'
+
+class Mpeg4CuvidCodec(DecoderCodec):
+    """
+    MPEG4 cuda decoder
+    """
+    codec_name = 'mpeg4_cuvid'
+    ffmpeg_codec_name = 'mpeg4_cuvid'
+
+class Vc1CuvidCodec(DecoderCodec):
+    """
+    VC1 cuda decoder
+    """
+    codec_name = 'vc1_cuvid'
+    ffmpeg_codec_name = 'vc1_cuvid'
+    
+class Vp8CuvidCodec(DecoderCodec):
+    """
+    VP8 cuda decoder
+    """
+    codec_name = 'vp8_cuvid'
+    ffmpeg_codec_name = 'vp8_cuvid'
+    
+class Vp9CuvidCodec(DecoderCodec):
+    """
+    VP9 cuda decoder
+    """
+    codec_name = 'vp9_cuvid'
+    ffmpeg_codec_name = 'vp9_cuvid'
+        
 audio_codec_list = [
     AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec,
     FdkAacCodec, Ac3Codec, DtsCodec, FlacCodec
+]
+
+decoder_codec_list = [
+    DecoderNullCodec, H263CuvidCodec, H264CuvidCodec, HEVCCuvidCodec, MJPEGCuvidCodec,
+    Mpeg1CuvidCodec, Mpeg2CuvidCodec, Mpeg4CuvidCodec, Vc1CuvidCodec,
+    Vp8CuvidCodec, Vp9CuvidCodec
 ]
 
 video_codec_list = [
