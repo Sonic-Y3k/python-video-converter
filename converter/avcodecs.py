@@ -95,7 +95,7 @@ class AudioCodec(BaseCodec):
 
         safe = self._codec_specific_parse_options(safe)
 
-        optlist = ['-acodec', self.ffmpeg_codec_name]
+        optlist = ['-c:a', self.ffmpeg_codec_name]
         if 'channels' in safe:
             optlist.extend(['-ac', str(safe['channels'])])
         if 'bitrate' in safe:
@@ -151,7 +151,7 @@ class SubtitleCodec(BaseCodec):
 
         safe = self._codec_specific_parse_options(safe)
 
-        optlist = ['-scodec', self.ffmpeg_codec_name]
+        optlist = ['-c:s', self.ffmpeg_codec_name]
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
         return optlist
@@ -432,7 +432,7 @@ class VideoCodec(BaseCodec):
         # ffmpeg select the best pixel format supported by the encoder.
         pix_fmt = safe.get('pix_fmt', 'yuv420p')
 
-        optlist = ['-vcodec', self.ffmpeg_codec_name, '-pix_fmt', pix_fmt]
+        optlist = ['-c:v', self.ffmpeg_codec_name, '-pix_fmt', pix_fmt]
 
         if 'fps' in safe:
             optlist.extend(['-r', str(round(safe['fps'], 2))])
@@ -510,7 +510,7 @@ class AudioCopyCodec(BaseCodec):
     codec_name = 'copy'
 
     def parse_options(self, opt):
-        return ['-acodec', 'copy']
+        return ['-c:a', 'copy']
 
 
 class VideoCopyCodec(BaseCodec):
@@ -520,7 +520,7 @@ class VideoCopyCodec(BaseCodec):
     codec_name = 'copy'
 
     def parse_options(self, opt):
-        return ['-vcodec', 'copy']
+        return ['-c:v', 'copy']
 
 
 class SubtitleCopyCodec(BaseCodec):
@@ -530,7 +530,7 @@ class SubtitleCopyCodec(BaseCodec):
     codec_name = 'copy'
 
     def parse_options(self, opt):
-        return ['-scodec', 'copy']
+        return ['-c:s', 'copy']
 
 
 # Audio Codecs
