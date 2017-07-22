@@ -634,12 +634,13 @@ class TheoraCodec(VideoCodec):
             optlist.extend(['-qscale:v', safe['quality']])
         return optlist
 
+
 class H264NvencCodec(VideoCodec):
     """
     H264/AVC Video codec by Nvidia.
     """
-    codec_name = 'nvenc_h264'
-    ffmpeg_codec_name = 'nvenc_h264'
+    codec_name = 'h264_nvenc'
+    ffmpeg_codec_name = 'h264_nvenc'
     encoder_options = VideoCodec.encoder_options.copy()
     encoder_options.update({
         'preset': str,
@@ -800,13 +801,14 @@ class H264NvencCodec(VideoCodec):
                 logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
                 optlist.extend(['-qmax', '51'])
         return optlist
-    
+
+ 
 class HEVCNvencCodec(VideoCodec):
     """
     HEVC/AVC Video codec by Nvidia.
     """
-    codec_name = 'nvenc_hevc'
-    ffmpeg_codec_name = 'nvenc_hevc'
+    codec_name = 'hevc_nvenc'
+    ffmpeg_codec_name = 'hevc_nvenc'
     encoder_options = VideoCodec.encoder_options.copy()
     encoder_options.update({
         'preset': str,
