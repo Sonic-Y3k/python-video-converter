@@ -677,10 +677,10 @@ class H264NvencCodec(VideoCodec):
                 optlist.extend(['-preset', 'medium'])
         if 'profile' in safe:
             if safe['profile'] in ['baseline', 'main', 'high', 'high444p']:
-                optlist.extend(['-profile', safe['profile']])
+                optlist.extend(['-profile:v', safe['profile']])
             else:
                 logger.error(safe['profile']+' is not a valid profile for nvenc_h264 encoder ...')
-                optlist.extend(['-profile', 'main'])
+                optlist.extend(['-profile:v', 'main'])
         if 'level' in safe:
             if safe['level'] in ['auto', '1', '1.0', '1b', '1.0b', '1.1', '1.2', '1.3', '2', '2.0', '2.1', '2.2', '3', '3.0', '3.1', '3.2', '4', '4.0', '4.1', '4.2', '5', '5.0', '5.1']:
                 optlist.extend(['-level', safe['level']])
@@ -846,10 +846,10 @@ class HEVCNvencCodec(VideoCodec):
                 optlist.extend(['-preset', 'medium'])
         if 'profile' in safe:
             if safe['profile'] in ['main', 'main10', 'rext']:
-                optlist.extend(['-profile', safe['profile']])
+                optlist.extend(['-profile:v', safe['profile']])
             else:
                 logger.error(safe['profile']+' is not a valid profile for hevc_nvenc encoder ...')
-                optlist.extend(['-profile', 'main'])
+                optlist.extend(['-profile:v', 'main'])
         if 'level' in safe:
             if safe['level'] in ['auto', '1', '1.0', '2', '2.0', '2.1', '3', '3.0', '3.1', '4', '4.0', '4.1', '5', '5.0', '5.1', '5.2', '6', '6.0', '6.1', '6.2']:
                 optlist.extend(['-level', safe['level']])
