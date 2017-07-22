@@ -432,7 +432,7 @@ class FFMpeg(object):
 
         if '-decoder' in opts:
             idx = opts.index('-decoder')
-            cmds.append(opts.pop(idx).replace('decoder','vcodec'))
+            cmds.append(opts.pop(idx).replace('decoder','c:v'))
             cmds.append(opts.pop(idx))
             
         if infile == self.DVD_CONCAT_FILE:
