@@ -790,13 +790,13 @@ class H264NvencCodec(VideoCodec):
                 optlist.extend(['-cq', '0'])
         if 'qmin' in safe:
             if 0 <= safe['qmin'] <= 51:
-                optlist.extend(['-qc', str(safe['qmin'])])
+                optlist.extend(['-qmin', str(safe['qmin'])])
             else:
                 logger.error(str(safe['qmin'])+' is not a valid qmin for hevc_nvenc encoder ...')
                 optlist.extend(['-qmin', '0'])
         if 'qmax' in safe:
             if 0 <= safe['qmax'] <= 51:
-                optlist.extend(['-qc', str(safe['qmax'])])
+                optlist.extend(['-qmax', str(safe['qmax'])])
             else:
                 logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
                 optlist.extend(['-qmax', '51'])
@@ -959,13 +959,13 @@ class HEVCNvencCodec(VideoCodec):
                 optlist.extend(['-cq', '0'])
         if 'qmin' in safe:
             if 0 <= safe['qmin'] <= 51:
-                optlist.extend(['-qc', str(safe['qmin'])])
+                optlist.extend(['-qmin', str(safe['qmin'])])
             else:
                 logger.error(str(safe['qmin'])+' is not a valid qmin for hevc_nvenc encoder ...')
                 optlist.extend(['-qmin', '0'])
         if 'qmax' in safe:
             if 0 <= safe['qmax'] <= 51:
-                optlist.extend(['-qc', str(safe['qmax'])])
+                optlist.extend(['-qmax', str(safe['qmax'])])
             else:
                 logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
                 optlist.extend(['-qmax', '51'])
