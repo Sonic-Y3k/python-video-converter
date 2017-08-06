@@ -158,6 +158,10 @@ class Converter(object):
             end = parse_time(opt['end'])
             format_options.extend(['-to', end])
 
+        if 'max_muxing_queue_size' in opt:
+            mqs = opt['max_muxing_queue_size']
+            format_options.extend(['-max_muxing_queue_size', str(mqs)])
+
         # aggregate all options
         optlist = audio_options + video_options + subtitle_options + decoder_options + format_options
 
