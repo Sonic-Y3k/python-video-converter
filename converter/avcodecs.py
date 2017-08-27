@@ -831,8 +831,12 @@ class HEVCNvencCodec(VideoCodec):
         'strict_gop': bool,
         'aq-strength': int,
         'cq': float,
-        'qmin': float,
-        'qmax': float
+        'aud': bool,
+        'bluray-compat': bool,
+        'init_qpP': float,
+        'init_qpB': float,
+        'init_qpI': float,
+        'qp': float,
     })
     
     def _codec_specific_produce_ffmpeg_list(self, safe):
@@ -957,18 +961,42 @@ class HEVCNvencCodec(VideoCodec):
             else:
                 logger.error(str(safe['cq'])+' is not a valid cq for hevc_nvenc encoder ...')
                 optlist.extend(['-cq', '0'])
-        if 'qmin' in safe:
-            if 0 <= safe['qmin'] <= 51:
-                optlist.extend(['-qmin', str(safe['qmin'])])
+        if 'aud' in safe:
+            if safe['aud'] in [False, True]:
+                optlist.extend(['-aud', str(int(safe['aud']))])
             else:
-                logger.error(str(safe['qmin'])+' is not a valid qmin for hevc_nvenc encoder ...')
-                optlist.extend(['-qmin', '0'])
-        if 'qmax' in safe:
-            if 0 <= safe['qmax'] <= 51:
-                optlist.extend(['-qmax', str(safe['qmax'])])
+                logger.error(str(safe['aud'])+' is not a valid aud for hevc_nvenc encoder ...')
+                optlist.extend(['-aud', '0'])
+        if 'bluray-compat' in safe:
+            if safe['bluray-compat'] in [False, True]:
+                optlist.extend(['-bluray-compat'], str(int(safe['bluray-compat'])))
             else:
-                logger.error(str(safe['qmax'])+' is not a valid qmax for hevc_nvenc encoder ...')
-                optlist.extend(['-qmax', '51'])
+                logger.error(str(safe['bluray-compat'])+' is not a valid bluray-compat for hevc_nvenc encoder ...')
+                optlist.extend(['-bluray-compat'], '0')
+        if 'init_qpP' in safe:
+            if -1 <= safe['init_qpP'] <= 51:
+                optlist.extend(['-init_qpP', str(safe['init_qpP'])])
+            else:
+                logger.error(str(safe['init_qpP'])+' is not a valid init_qpP for hevc_nvenc encoder ...')
+                optlist.extend(['-init_qpP', '-1'])
+        if 'init_qpB' in safe:
+            if -1 <= safe['init_qpP'] <= 51:
+                optlist.extend(['-init_qpB', str(safe['init_qpB'])])
+            else:
+                logger.error(str(safe['init_qpB'])+' is not a valid init_qpB for hevc_nvenc encoder ...')
+                optlist.extend(['-init_qpB', '-1'])
+        if 'init_qpI' in safe:
+            if -1 <= safe['init_qpI'] <= 51:
+                optlist.extend(['-init_qpI', str(safe['init_qpI'])])
+            else:
+                logger.error(str(safe['init_qpI'])+' is not a valid init_qpI for hevc_nvenc encoder ...')
+                optlist.extend(['-init_qpI', '-1'])
+        if 'qp' in safe:
+            if -1 <= safe['qp'] <= 51:
+                optlist.extend(['-qp', str(safe['qp'])])
+            else:
+                logger.error(str(safe['qp'])+' is not a valid qp for hevc_nvenc encoder ...')
+                optlist.extend(['-qp', '-1'])
         return optlist
 
 class HEVCCodec(VideoCodec):
