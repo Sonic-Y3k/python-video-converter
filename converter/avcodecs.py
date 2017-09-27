@@ -386,7 +386,7 @@ class VideoCodec(BaseCodec):
             except:
                 del safe['crop']
             else:
-                if crop_width < 16 or crop_width > 3000:
+                if crop_width < 16 or crop_width > 4100:
                     crop_width = None
                 if crop_height < 16 or crop_height > 3000:
                     crop_height = None
