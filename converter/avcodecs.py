@@ -440,10 +440,12 @@ class VideoCodec(BaseCodec):
             optlist.extend(['-vb', str(safe['bitrate']) + 'M'])
         if 'bufsize' in safe:
             optlist.extend(['-bufsize', str(safe['bufsize']) + 'k'])
-        if w and h:
-            optlist.extend(['-s', '{0}x{1}'.format(int(w), int(h))])
-            if 'aspect' in safe:
-                optlist.extend(['-aspect', '{0}:{1}'.format(int(w), int(h))])
+        
+        if 'vaapi' not in self.ffmpeg_codec_name:
+            if w and h:
+                optlist.extend(['-s', '{0}x{1}'.format(int(w), int(h))])
+                if 'aspect' in safe:
+                    optlist.extend(['-aspect', '{0}:{1}'.format(int(w), int(h))])
 
         if safe.get('crop'):
             optlist = self._extend_vf(optlist, 'crop={0}'.format(safe['crop']))
@@ -460,7 +462,6 @@ class VideoCodec(BaseCodec):
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
         return optlist
-
 
 class AudioNullCodec(BaseCodec):
     """
@@ -634,6 +635,76 @@ class TheoraCodec(VideoCodec):
             optlist.extend(['-qscale:v', safe['quality']])
         return optlist
 
+class H264VaapiCodec(VideoCodec):
+    """
+    H264/AVC Video codec by Mesa
+    """
+    codec_name = 'h264_vaapi'
+    ffmpeg_codec_name = 'h264_vaapi'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'qp': int,
+        'quality': int,
+        'low_power': int,
+        'coder': int,
+        'hwaccel_device': str,
+    })
+    
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'qp' in safe:
+            if 0 <= safe['qp'] <= 52:
+                optlist.extend(['-qp', str(safe['qp'])])
+            else:
+                logger.error('Constant QP ({}) invalid. Reverting to default (20) ...'.format(safe['qp']))
+                optlist.extend(['-qp', '20'])
+        if 'quality' in safe:
+            if 0 <= safe['quality'] <= 8:
+                optlist.extend(['-quality', str(safe['quality'])])
+            else:
+                logger.error('Encode quality invalid ({}). Reverting to default (0)...'.format(safe['quality']))
+                optlist.extend(['-quality', '0'])
+        if 'low_power' in safe:
+            if safe['low_power'] in [0, 1]:
+                optlist.extend(['-low_power', str(safe['low_power'])])
+            else:
+                logger.error('Invalid low_power ({})'.format(safe['low_power']))
+        if 'coder' in safe:
+            if safe['coder'] in [0, 1]:
+                optlist.extend(['-coder', str(safe['coder'])])
+            else:
+                logger.error('Invalid coder ({})'.format(safe['coder']))
+        return optlist
+        
+                
+class HevcVaapiCodec(VideoCodec):
+    """
+    H264/AVC Video codec by Mesa
+    """
+    codec_name = 'hevc_vaapi'
+    ffmpeg_codec_name = 'hevc_vaapi'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'qp': int,
+        'vprofile': int,
+    })
+    
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'qp' in safe:
+            if 0 <= safe['qp'] <= 52:
+                optlist.extend(['-qp', str(safe['qp'])])
+            else:
+                logger.error('Constant QP ({}) invalid. Reverting to default (25) ...'.format(safe['qp']))
+                optlist.extend(['-qp', '25'])
+                
+        if 'vprofile' in safe:
+            if safe['vprofile'] in [2]:
+                optlist.extend(['-profile:v', str(safe['vprofile'])])
+            else:
+                logger.error('Profile ({}) invalid.'.format(safe['vprofile']))
+        return optlist
+              
 
 class H264NvencCodec(VideoCodec):
     """
@@ -1588,7 +1659,8 @@ decoder_codec_list = [
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Ffv1Codec, Mpeg1Codec,
-    Mpeg2Codec, HEVCNvencCodec, H264NvencCodec, HEVCCodec
+    Mpeg2Codec, HEVCNvencCodec, H264NvencCodec, HEVCCodec, H264VaapiCodec,
+    HevcVaapiCodec
 ]
 
 subtitle_codec_list = [

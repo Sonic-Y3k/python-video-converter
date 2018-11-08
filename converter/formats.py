@@ -5,7 +5,7 @@ class BaseFormat(object):
     """
     Base format class.
 
-    Supported formats are: ogg, avi, mkv, webm, flv, mov, mp4, mpeg
+    Supported formats are: ogg, avi, mkv, webm, flv, mov, mp4, mpeg, hevc
     """
 
     format_name = None
@@ -97,6 +97,11 @@ class Mp4Format(BaseMovMp4Format):
     format_name = 'mp4'
     ffmpeg_format_name = 'mp4'
 
+class HevcFormat(BaseFormat):
+    """
+    """
+    format_name = 'hevc'
+    ffmpeg_format_name = 'hevc'
 
 class MpegFormat(BaseFormat):
     """
@@ -143,5 +148,5 @@ class HLSFormat(BaseFormat):
 
 format_list = [
     RawvideoFormat, OggFormat, AviFormat, MkvFormat, WebmFormat, FlvFormat,
-    MovFormat, Mp4Format, MpegFormat, Mp3Format, HLSFormat
+    MovFormat, Mp4Format, MpegFormat, Mp3Format, HLSFormat, HevcFormat
 ]

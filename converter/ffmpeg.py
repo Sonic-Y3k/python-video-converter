@@ -7,6 +7,7 @@ import signal
 from urllib3.util import parse_url
 from subprocess import Popen, PIPE
 import logging
+import datetime
 import locale
 import json
 import time
@@ -257,7 +258,10 @@ class FFMpeg(object):
             branch[key.replace('_', '')] = value
 
         def lower(key, value, branch):
-            branch[key] = value.lower()
+            try:
+                branch[key] = value.lower()
+            except AttributeError:
+                branch[key] = "{}".format(value).lower()
 
         def container(key, value, branch):
             info['container'] = value.lower().split(',')
@@ -434,7 +438,10 @@ class FFMpeg(object):
             idx = opts.index('-decoder')
             cmds.append(opts.pop(idx).replace('decoder','c:v'))
             cmds.append(opts.pop(idx))
-            
+        
+        if 'hevc_vaapi' in opts or 'h264_vaapi' in opts:
+            cmds.extend(['-vaapi_device', '/dev/dri/renderD128'])
+        
         if infile == self.DVD_CONCAT_FILE:
             cmds.extend(['-f', 'concat', '-safe', '0'])
         # Add duration and position flag before input when we can.
@@ -465,47 +472,53 @@ class FFMpeg(object):
             else:
                 raise FFMpegError("Invalid nice value: "+str(nice))
 
-        if 'pipe:' in cmds:
-            if infile.upper().endswith('.VOB'):
-                infile = os.path.dirname(infile)
-            nice = cmds[0:3] if cmds[0] == 'nice' else []
-            piped_cmds = nice + ['tccat', '-i', infile, '-T', str(title) + ',-1']
-            preprocess = self._spawn(piped_cmds)
-        else:
-            preprocess = None
-
-        if timeout:
-            def on_sigalrm(*_):
-                try:
-                    signal.signal(signal.SIGALRM, signal.SIG_DFL)
-                except ValueError:
-                    pass
-                raise Exception('timed out while waiting for ffmpeg')
-            
-            try:
-                signal.signal(signal.SIGALRM, on_sigalrm)
-            except ValueError:
-                pass
-                
         try:
-            if preprocess:
-                self.current_process = self._spawn(cmds, preprocess.stdout)
-                preprocess.stdout.close()
-            else:
-                self.current_process = self._spawn(cmds)
-            p = self.current_process
+            p = self._spawn(cmds)
         except OSError:
             raise FFMpegError('Error while calling ffmpeg binary')
 
+        if timeout:
+            def on_sigvtalrm(*_):
+                try:
+                    signal.signal(signal.SIGVTALRM, signal.SIG_DFL)
+                except ValueError:
+                    pass
+                if p.poll() is None:
+                    p.kill()
+                raise Exception('timed out while waiting for ffmpeg')
+
+            try:
+                signal.signal(signal.SIGVTALRM, on_sigvtalrm)
+            except ValueError:
+                pass
+
         yielded = False
-        buf = []
-        total_output = []
-        pat = re.compile(r'time=([0-9.:]+)')
+        buf = ''
+        total_output = ''
+        if '/dev/null' in cmds:
+            pat = re.compile(r'time=\s*([0-9.:]+)')
+        else:
+            pat = re.compile(r"frame=\s*([0-9]*).*fps=\s*([0-9]*).*time=\s*([0-9.:]+)\s*bitrate=\s*([0-9.N/A]*).*.*speed=([0-9.:]*).*")
+            
+        def get_res(out):
+            tmp = pat.findall(out)
+            if len(tmp) == 1:
+                timespec = tmp[0]
+                if not '/dev/null' in cmds:
+                    return timespec
+                
+                if ':' in timespec:
+                    t = datetime.datetime.strptime(timespec, "%H:%M:%S.%f")
+                    timecode = float(t.microsecond / 1000000 + t.second + 60 * t.minute + 3600 * t.hour)
+                else:
+                    timecode = float(tmp[0])
+                return timecode
+            return None
 
         while True:
             if timeout:
                 try:
-                    signal.alarm(timeout)
+                    signal.setitimer(signal.ITIMER_VIRTUAL, timeout)
                 except ValueError:
                     pass
 
@@ -513,42 +526,26 @@ class FFMpeg(object):
 
             if timeout:
                 try:
-                    signal.alarm(0)
+                    signal.setitimer(signal.ITIMER_VIRTUAL, 0)
                 except ValueError:
                     pass
+
             if not ret:
                 break
 
-            try:
-                total_output.append(str(ret, console_encoding))
-                buf.append(str(ret, console_encoding))
-            except TypeError:
-                total_output.append(ret)
-                buf.append(ret)
-            if b'\r' in ret:
-                buf = ''.join(buf)
-                try:
-                    buf = buf.decode(console_encoding, 'ignore')
-                except AttributeError:
-                    pass
-                line, buf = buf.split('\r', 1)                
-                buf = [buf]
-                tmp = pat.search(line)
-                if tmp:
-                    timecode = timecode_to_seconds(tmp.group(1))
+            ret = ret.decode(console_encoding, "replace")
+            total_output += ret
+            buf += ret
+            if '\r' in buf:
+                line, buf = buf.split('\r', 1)
+                timecode = get_res(line)
+                if timecode is not None:
                     yielded = True
                     yield timecode
-
-        total_output = ''.join(total_output)
-        try:
-            total_output = total_output.decode(console_encoding, 'ignore')
-        except AttributeError:
-            pass
         if not yielded:
             # There may have been a single time, check it
-            tmp = pat.search(total_output)
-            if tmp:
-                timecode = timecode_to_seconds(tmp.group(1))
+            timecode = get_res(total_output)
+            if timecode is not None:
                 yielded = True
                 yield timecode
 
@@ -559,11 +556,8 @@ class FFMpeg(object):
                 pass
 
         p.communicate()  # wait for process to exit
-        if preprocess:
-            preprocess.terminate()
-            preprocess.wait()
 
-        if not total_output:
+        if total_output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
         cmd = ' '.join(cmds)
@@ -572,8 +566,9 @@ class FFMpeg(object):
 
             if line.startswith('Received signal'):
                 # Received signal 15: terminating.
-                raise FFMpegConvertError(line.split(':')[0], cmd, total_output, pid=p.pid)
-            if line.startswith(infile):
+                raise FFMpegConvertError(
+                    line.split(':')[0], cmd, total_output, pid=p.pid)
+            if line.startswith(infile + ': '):
                 err = line[len(infile) + 2:]
                 raise FFMpegConvertError('Encoding error', cmd, total_output,
                                          err, pid=p.pid)
@@ -640,7 +635,8 @@ class FFMpeg(object):
 
         for data in self.convert(infile, '/dev/null',
                                  opts, timeout, nice=nice, get_output=True):
-            if isinstance(data, float):
+            if 'sre' in str(type(data)) or \
+               'float' in str(type(data)):
                 yield data
             else:
                 interlace = None

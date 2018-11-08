@@ -144,6 +144,12 @@ class Converter(object):
                 for mi in m:
                     if type(mi) == int:
                         format_options.extend(['-map', '0:'+str(mi)])
+            elif type(m) == dict:
+                for mi in m:
+                    if type(mi) == int:
+                        for mj in m[mi]:
+                            if type(mj) == int:
+                                format_options.extend(['-map', '{}:{}'.format(mi,mj)])
             else:
                 raise ConverterError('map needs to be int or a list of int')
 
@@ -170,7 +176,7 @@ class Converter(object):
         elif twopass == 2:
             optlist.extend(['-pass', '2'])
 
-        return optlist
+        return optlist                
 
     def convert(self, infile, outfile, options, twopass=False, timeout=10, nice=None, title=None):
         """
@@ -255,17 +261,19 @@ class Converter(object):
             optlist1 = self.parse_options(options, 1)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
                                                 timeout=timeout, nice=nice):
-                yield int((50.0 * timecode) / duration)
-
+                # yield int((50.0 * timecode) / duration)
+                yield timecode
             optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
                                                 timeout=timeout, nice=nice):
-                yield int(50.0 + (50.0 * timecode) / duration)
+                # yield int(50.0 + (50.0 * timecode) / duration)
+                yield timecode
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
                                                 timeout=timeout, nice=nice):
-                yield int((100.0 * timecode) / duration)
+                # yield int((100.0 * timecode) / duration)
+                yield timecode
 
     def analyze(self, infile, audio_level=True, interlacing=True, crop=False, start=None, duration=None, end=None, timeout=10, nice=None, title=None):
         """
@@ -302,10 +310,11 @@ class Converter(object):
             raise ConverterError('Zero-length media')
         for timecode in self.ffmpeg.analyze(infile, audio_level, interlacing,
                                             crop, start, duration, end, timeout, nice):
-            if isinstance(timecode, float):
-                yield int((100.0 * timecode) / info['format']['duration'])
-            else:
-                yield timecode
+            #if isinstance(timecode, float):
+            #    yield int((100.0 * timecode) / info['format']['duration'])
+            #else:
+            #    yield timecode
+            yield timecode
 
     def probe(self, *args, **kwargs):
         """
